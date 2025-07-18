@@ -3,70 +3,89 @@ import { useState, useEffect } from "react";
 function Fetch() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [form, setForm] = useState({ name: "", description: "", unit_price: "", stock: "" });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  useEffect(() => {
+  const fetchData = () => {
     fetch("http://127.0.0.1:8000/api/productos")
-      .then((response) => response.json())
-      .then((data) => {
-        setData(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.log(err);
-        setError("Error al cargar los productos");
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.productos); // usa res si Laravel devuelve el array directo
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = () => {
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing
+      ? `http://127.0.0.1:8000/api/productos/${editingId}`
+      : "http://127.0.0.1:8000/api/productos";
+
+    fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form),
+    }).then(() => {
+      setForm({ name: "", description: "", unit_price: "", stock: "" });
+      setIsEditing(false);
+      setEditingId(null);
+      fetchData();
+    });
+  };
+
+  const handleEdit = (producto) => {
+    setForm({
+      name: producto.name,
+      description: producto.description,
+      unit_price: producto.unit_price,
+      stock: producto.stock,
+    });
+    setIsEditing(true);
+    setEditingId(producto.id);
+  };
+
+  const handleDelete = (id) => {
+    if (confirm("¿Estás seguro de eliminar este producto?")) {
+      fetch(`http://127.0.0.1:8000/api/productos/${id}`, {
+        method: "DELETE",
+      }).then(() => fetchData());
+    }
+  };
+
   if (loading) return <p>Cargando...</p>;
-  if (error) return <p>{error}</p>;
 
   return (
     <>
-      <h1>Lista de productos</h1>
+      <h1>Gestión de Productos</h1>
+
+      <h3>{isEditing ? "Editar Producto" : "Agregar Producto"}</h3>
+      <input name="name" placeholder="Nombre" value={form.name} onChange={handleChange} />
+      <input name="description" placeholder="Descripción" value={form.description} onChange={handleChange} />
+      <input name="unit_price" placeholder="Precio" value={form.unit_price} onChange={handleChange} />
+      <input name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} />
+      <button onClick={handleSubmit}>{isEditing ? "Actualizar" : "Agregar"}</button>
+
       <ul>
         {data.map((producto) => (
           <li key={producto.id}>
-            <strong>Nombre:</strong> {producto.name} <br />
-            <strong>Descripción:</strong> {producto.description} <br />
-            <strong>Precio unitario:</strong> ${producto.unit_price} <br />
-            <strong>Stock:</strong> {producto.stock} unidades
+            <strong>{producto.name}</strong> — {producto.description} — ${producto.unit_price} — Stock: {producto.stock}
+            <br />
+            <button onClick={() => handleEdit(producto)}>Editar</button>
+            <button onClick={() => handleDelete(producto.id)}>Eliminar</button>
           </li>
         ))}
       </ul>
-
-<table class="table">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">First</th>
-      <th scope="col">Last</th>
-      <th scope="col">Handle</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th scope="row">1</th>
-      <td>Mark</td>
-      <td>Otto</td>
-      <td>@mdo</td>
-    </tr>
-    <tr>
-      <th scope="row">2</th>
-      <td>Jacob</td>
-      <td>Thornton</td>
-      <td>@fat</td>
-    </tr>
-    <tr>
-      <th scope="row">3</th>
-      <td colspan="2">Larry the Bird</td>
-      <td>@twitter</td>
-    </tr>
-  </tbody>
-</table>
-
-
     </>
   );
 }
