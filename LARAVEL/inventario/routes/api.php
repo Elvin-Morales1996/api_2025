@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProductosController;
 use App\Models\Productos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -10,8 +11,5 @@ Route::get('/user', function (Request $request) {
 
 
 
-//ruta de mis productosllklk
-Route::get('/productos', function () {
-    $productos = Productos::all();
-    return response()->json($productos);
-});
+//ruta de mis productos
+Route::get('/productos',[ProductosController::class,'index']);

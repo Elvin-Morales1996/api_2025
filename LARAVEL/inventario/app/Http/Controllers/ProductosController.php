@@ -13,6 +13,14 @@ class ProductosController extends Controller
     public function index()
     {
         //
+        $productos = Productos::all();
+
+        $data =[
+            'productos' => $productos,
+            'status' => '200'
+        ];
+
+        return response()->json($data, 200);
     }
 
     /**
